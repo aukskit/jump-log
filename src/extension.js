@@ -1,20 +1,47 @@
 const vscode = require('vscode');
 const fs = require('fs');
+const { stringify } = require('querystring');
+const { countReset } = require('console');
 
 async function watchFile() {
 	console.log('watch() called');
 	let file = vscode.workspace.getConfiguration('PATH').get("logfile");
+	
 	if(!file) {
-		vscode.window.showErrorMessage("Logfile not found")
-	} else {
-		vscode.window.showInformationMessage("Start watching Logfile for update")
+		vscode.window.showErrorMessage("Logfile not found");
+		return;
 	}
-	var watcher = fs.watch(file, function(event, filename) {
-		if(event == 'change') {
-			watcher.close();
-			console.log('watch() finished');
-			vscode.window.showInformationMessage("logfile updated")
-		}
+	vscode.window.withProgress({
+		location: vscode.ProgressLocation.Notification,
+		title: "Waiting for update",
+		cancellable: true
+	}, async (progress, token) => {
+		const p = new Promise(resolve => {
+			// Set progress counter
+			let cnt = 0;
+			setInterval(() => {
+				progress.report({ increment: 1, message: cnt+" sec" })
+				cnt++;
+			}, 1000)
+
+			// file watcher
+			var watcher = fs.watch(file, async function(event, filename) {
+				if(event == 'change') {
+					watcher.close();
+					console.log('watch() finished');
+					resolve();
+
+					const answer = await vscode.window.showInformationMessage("Logfile updated. Open logfile?", "Yes", "No")
+					
+					if(answer === "Yes") {
+						vscode.workspace.openTextDocument(file).then((newDoc) => {
+							vscode.window.showTextDocument(newDoc);
+						})
+					}
+				}
+			})
+		})
+		return p;
 	})
 }
 
@@ -42,8 +69,9 @@ function activate(context) {
 
 	// The command has been defined in the package.json file
 	context.subscriptions.push(
-		vscode.commands.registerCommand('jump-log.watchLogFile', function () {
+		vscode.commands.registerCommand('jump-log.watchLogFile', async function () {
 			watchFile();
+			// _progress();
 		})
 	);
 }
@@ -86,6 +114,11 @@ function _moveTo(targetline) {
 	{
 		to: "up", by:'line', value: currentline - targetline
 	});
+}
+
+async function _counter()
+{
+
 }
 
 module.exports = {
