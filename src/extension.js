@@ -35,9 +35,10 @@ async function watchFile() {
 					const answer = await vscode.window.showInformationMessage("Logfile updated. Open logfile?", "Yes", "No")
 					
 					if(answer === "Yes") {
-						vscode.workspace.openTextDocument(file).then((newDoc) => {
-							vscode.window.showTextDocument(newDoc);
-						})
+						// vscode.workspace.openTextDocument(file).then((newDoc) => {
+						// 	vscode.window.showTextDocument(newDoc);
+						// })
+						_extractLog();
 					}
 				}
 			})
@@ -74,6 +75,7 @@ function activate(context) {
 		vscode.commands.registerCommand('jump-log.watchLogFile', async function () {
 			_run_bat();
 			watchFile();
+			// _extractLog();
 		})
 	);
 }
@@ -92,16 +94,24 @@ function _analyse() {
 	}
 	let linux_path = word[0];
 	let rows = word[1];
-	let cols = word[2];
 	
+	let windows_path = _get_windows_path(linux_path);
+
+	_jumpTo(windows_path, rows);
+}
+
+function _get_windows_path(linux_path)
+{
 	let searchValue = vscode.workspace.getConfiguration('PATH').get("projectOnUbuntu");
 	let replaceValue = vscode.workspace.getConfiguration('PATH').get("projectOnWindows");
+	return linux_path.replace(searchValue, replaceValue).replaceAll("\\", "/");
+}
 
-	let windows_path = linux_path.replace(searchValue, replaceValue);
-
-	vscode.workspace.openTextDocument(windows_path).then((newDoc) => {
+function _jumpTo(file_path, line)
+{
+	vscode.workspace.openTextDocument(file_path).then((newDoc) => {
 		vscode.window.showTextDocument(newDoc, { }).then( () => {
-			_moveTo(rows);
+			_moveTo(line);
 		})
 	})
 }
@@ -136,6 +146,139 @@ function cmdOut(command){
 	let result = cmdRun(command);
 	console.log("> " + command + "\n => " + result);
 	return result;
+}
+
+function _extractLog(editor) {
+	const panel = _webview();
+
+	let file = vscode.workspace.getConfiguration('PATH').get("logfile");
+	vscode.workspace.openTextDocument(file).then((newDoc) => {
+		let text = newDoc.getText();
+		var array = text.split(/\r?\n/g);
+		var error = array.filter( function( value ) {
+			if(value.match("Error")) {
+				return value.split(":").length >= 5 ? value : null;
+			} else {
+				return null;
+			}
+		})
+		var warning = array.filter( function( value ) {
+			if(value.match("warning")) {
+				return value.split(":").length >= 5 ? value : null;
+			} else {
+				return null;
+			}
+		})
+		// set webview title
+		panel.title = "Error:"+error.length + " Warning:"+ warning.length;
+		
+		var list = error.concat(warning);
+		for(let i=0; i < list.length; i++) {
+			let text = list[i].split(":");
+			if(text.length >= 5) {
+				let linux_path = text[0];
+				let rows = text[1];
+				let cols = text[2];
+				let type = text[3];
+				let discription = text[4];
+				let message = "[" + type + "] " + discription;
+				console.log(type+":"+discription);
+				let windows_path = _get_windows_path(linux_path);
+				panel.webview.postMessage({ message: message, path: windows_path, line: rows});
+			}
+		}
+		
+	});
+}
+
+function _webview()
+{
+	const panel = vscode.window.createWebviewPanel(
+		'catCoding', // Identifies the type of the webview. Used internally
+		'Cat Coding', // Title of the panel displayed to the user
+		vscode.ViewColumn.One, // Editor column to show the new webview panel in.
+		{
+			enableScripts: true,
+			enableFindWidget: true
+		} 
+	);
+	panel.webview.html = getWebviewContent();
+
+	panel.webview.onDidReceiveMessage(
+        message => {
+			console.log(message.path);
+			_jumpTo(message.path, message.line);
+        }
+    );
+	return panel;
+}
+
+function getWebviewContentCat() {
+	return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+	  <meta charset="UTF-8">
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	  <title>Cat Coding</title>
+  </head>
+  <body>
+	  <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+	  <h1 id="lines-of-code-counter">0</h1>
+  
+	  <script>
+	  
+		  const counter = document.getElementById('lines-of-code-counter');
+		  
+		  let count = 0;
+		  counter.textContent = count++;
+		  setInterval(() => {
+			  counter.textContent = count++;
+		  }, 100);
+	  </script>
+  </body>
+  </html>`;
+}
+
+function getWebviewContent() {
+	return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+	  <meta charset="UTF-8">
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	  <title>Cat Coding</title>
+  </head>
+  <body>
+	  <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+	  <div id="parent"></div>
+	  
+	  <script type="text/javascript">
+		function OnLinkClick() {
+			let target = document.getElementById("output");
+			target.innerHTML = "Penguin";
+			return false;
+		}
+
+		window.addEventListener('message', event => {
+			const message = event.data;
+			let elm = document.getElementById('parent');
+			let div = document.createElement('div');
+			let a = document.createElement('a');
+			a.id = "a"+elm.childElementCount;
+			a.innerHTML = message.message + "..." + message.path + " : "+ message.line;
+			a.href = "#";
+			a.onclick = () => {
+				const vscode = acquireVsCodeApi();
+				vscode.postMessage({
+					path: message.path,
+					line: message.line
+				})
+			}
+			div.appendChild(a);
+			parent.appendChild(div);
+		});
+	  </script>
+  </body>
+  </html>`;
 }
 
 module.exports = {
