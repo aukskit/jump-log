@@ -34,6 +34,10 @@
 			{
 				"command": "jump-log.watchLogFile",
 				"key": "F5"
+			},
+			{
+				"command": "jump-log.jumpToFile",
+				"key": "F12"
 			}
 		],
 		"configuration": {

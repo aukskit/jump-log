@@ -2,7 +2,8 @@
 (To be written)
 
 ## Features
-(To be written)
+Press F5 to run .bat file and watch until log file has updated.
+Press F12 to jump from .log file to WARNING/ERROR line.
 
 ## Requirements
 No requirement(maybe)
