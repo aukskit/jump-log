@@ -182,7 +182,7 @@ function _extractLog(editor) {
 				let cols = text[2];
 				let type = text[3];
 				let discription = text[4];
-				let message = "[" + type + "] " + discription;
+				let message = "[" + type + " ] " + discription;
 				console.log(type+":"+discription);
 				let windows_path = _get_windows_path(linux_path);
 				panel.webview.postMessage({ message: message, path: windows_path, line: rows});
