@@ -31,15 +31,16 @@ async function watchFile() {
 					watcher.close();
 					console.log('watch() finished');
 					resolve();
-
-					const answer = await vscode.window.showInformationMessage("Logfile updated. Open logfile?", "Yes", "No")
 					
-					if(answer === "Yes") {
-						// vscode.workspace.openTextDocument(file).then((newDoc) => {
-						// 	vscode.window.showTextDocument(newDoc);
-						// })
-						_extractLog();
-					}
+					vscode.window.showInformationMessage('Logfile updated.');
+					_extractLog();
+
+					// const answer = await vscode.window.showInformationMessage("Logfile updated. Open logfile?", "Yes", "No")
+					// if(answer === "Yes") {
+					// 	vscode.workspace.openTextDocument(file).then((newDoc) => {
+					// 		vscode.window.showTextDocument(newDoc);
+					// 	})
+					// }
 				}
 			})
 			token.onCancellationRequested(() => watcher.close());
