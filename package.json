@@ -27,7 +27,7 @@
 			},
 			{
 				"command": "jump-log.watchLogFile",
-				"title": "Watch log file",
+				"title": "Watch log file"
 			}
 		],
 		"keybindings": [
@@ -53,6 +53,11 @@
 					"type": "string",
 					"default": "",
 					"description": "Path to project on Windows(need to double escape...)"
+				},
+				"PATH.batfile":{
+					"type": "string",
+					"default": "",
+					"description": "Path to .bat file"
 				}
 			}
 		}

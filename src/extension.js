@@ -1,7 +1,8 @@
 const vscode = require('vscode');
 const fs = require('fs');
-const { stringify } = require('querystring');
-const { countReset } = require('console');
+// const { stringify } = require('querystring');
+// const { countReset } = require('console');
+const child_process = require('child_process');
 
 async function watchFile() {
 	console.log('watch() called');
@@ -71,6 +72,7 @@ function activate(context) {
 	// The command has been defined in the package.json file
 	context.subscriptions.push(
 		vscode.commands.registerCommand('jump-log.watchLogFile', async function () {
+			_run_bat();
 			watchFile();
 		})
 	);
@@ -116,9 +118,24 @@ function _moveTo(targetline) {
 	});
 }
 
-async function _counter()
+function _run_bat()
 {
+	let path = vscode.workspace.getConfiguration('PATH').get("batfile");
+	if(!path) {
+		vscode.window.showErrorMessage("batfile not found");
+		return;
+	}
+	cmdOut(path);
+}
 
+function cmdRun(command) {
+	return child_process.execSync(command).toString();
+  }
+
+function cmdOut(command){
+	let result = cmdRun(command);
+	console.log("> " + command + "\n => " + result);
+	return result;
 }
 
 module.exports = {

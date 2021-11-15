@@ -10,9 +10,10 @@ No requirement(maybe)
 ## Extension Settings
 This extension contributes the following settings:
 
-* `PATH.logfile`: Set path to .log file(c:\\Users\\xxx\\Documents\\\\src\\a.log)
+* `PATH.logfile`: Set path to .log file(c:\\\\Users\\\\xxx\\\\Documents\\\\src\\\\a.log)
 * `PATH.projectOnUbuntu`: set path to project on Ubuntu(/home/user/work_space)
-* `PATH.projectOnWindows`: set path to project on Windows(c:\\shared)
+* `PATH.projectOnWindows`: set path to project on Windows(c:\\\\shared)
+* `PATH.batfile`: set path to project on Windows(c:\\\\shared\\\\a.bat)
 
 ## Known Issues
 None
