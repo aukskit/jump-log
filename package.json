@@ -27,7 +27,13 @@
 			},
 			{
 				"command": "jump-log.watchLogFile",
-				"title": "Watch log file"
+				"title": "Watch log file",
+			}
+		],
+		"keybindings": [
+			{
+				"command": "jump-log.watchLogFile",
+				"key": "F5"
 			}
 		],
 		"configuration": {
