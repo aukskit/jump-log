@@ -4,10 +4,16 @@ const fs = require('fs');
 async function watchFile() {
 	console.log('watch() called');
 	let file = vscode.workspace.getConfiguration('PATH').get("logfile");
+	if(!file) {
+		vscode.window.showErrorMessage("Logfile not found")
+	} else {
+		vscode.window.showInformationMessage("Start watching Logfile for update")
+	}
 	var watcher = fs.watch(file, function(event, filename) {
 		if(event == 'change') {
 			watcher.close();
 			console.log('watch() finished');
+			vscode.window.showInformationMessage("logfile updated")
 		}
 	})
 }
@@ -23,7 +29,6 @@ function activate(context) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('jump-log.helloWorld', function () {
 			vscode.window.showInformationMessage('Hello world');
-			watchFile();
 		})
 	);
 
@@ -32,6 +37,13 @@ function activate(context) {
 		vscode.commands.registerCommand('jump-log.jumpToFile', function () {
 			vscode.window.showInformationMessage('Jump');
 			_analyse();
+		})
+	);
+
+	// The command has been defined in the package.json file
+	context.subscriptions.push(
+		vscode.commands.registerCommand('jump-log.watchLogFile', function () {
+			watchFile();
 		})
 	);
 }
