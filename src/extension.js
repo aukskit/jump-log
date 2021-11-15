@@ -40,6 +40,7 @@ async function watchFile() {
 					}
 				}
 			})
+			token.onCancellationRequested(() => watcher.close());
 		})
 		return p;
 	})
@@ -62,7 +63,7 @@ function activate(context) {
 	// The command has been defined in the package.json file
 	context.subscriptions.push(
 		vscode.commands.registerCommand('jump-log.jumpToFile', function () {
-			vscode.window.showInformationMessage('Jump');
+			// vscode.window.showInformationMessage('Jump');
 			_analyse();
 		})
 	);
@@ -71,7 +72,6 @@ function activate(context) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('jump-log.watchLogFile', async function () {
 			watchFile();
-			// _progress();
 		})
 	);
 }
