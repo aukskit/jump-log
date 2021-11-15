@@ -157,7 +157,7 @@ function _extractLog(editor) {
 		let text = newDoc.getText();
 		var array = text.split(/\r?\n/g);
 		var error = array.filter( function( value ) {
-			if(value.match("Error")) {
+			if(value.match("error")) {
 				return value.split(":").length >= 5 ? value : null;
 			} else {
 				return null;
