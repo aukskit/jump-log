@@ -15,7 +15,8 @@ This extension contributes the following settings:
 * `PATH.projectOnUbuntu`: set path to project on Ubuntu(/home/user/work_space)
 * `PATH.projectOnWindows`: set path to project on Windows(c:\\\\shared)
 * `PATH.textfile`: set path to text file that will be removed(c:\\\\shared\\\\a.txt)
-* `PATH.image`: set path to image src(https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif)
+* `PATH.image_a`: set path to image src A(https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif)
+* `PATH.image_b`: set path to image src B(https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif)
 
 ## Known Issues
 None
@@ -27,3 +28,6 @@ Initial release
 
 ### 0.0.2
 Fix bugs
+
+### 0.0.3
+Add compiling window

@@ -2,6 +2,7 @@ const vscode = require('vscode');
 const fs = require('fs');
 
 let panel = null;
+let isCompiling = false;
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -12,6 +13,7 @@ function activate(context) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('jump-log.helloWorld', function () {
 			vscode.window.showInformationMessage('Hello world');
+			_createCatWebview();
 		})
 	);
 
@@ -42,6 +44,12 @@ async function watchLogFile() {
 		vscode.window.showErrorMessage("Logfile not found");
 		return;
 	}
+	if(isCompiling) {
+		return;
+	}
+	
+	compilingJumpLogWindow();
+
 	vscode.window.withProgress({
 		location: vscode.ProgressLocation.Notification,
 		title: "Waiting for update",
@@ -64,11 +72,15 @@ async function watchLogFile() {
 					vscode.window.showInformationMessage('Logfile updated.');
 					// Wait for log file to update completely
 					setTimeout(() => {
+						isCompiling = false;
 						updateJumpLogWindow();
 					}, 1000)
 				}
 			})
-			token.onCancellationRequested(() => watcher.close());
+			token.onCancellationRequested(() => {
+				watcher.close();
+				isCompiling = false;
+			})
 		})
 		return p;
 	})
@@ -111,6 +123,12 @@ function updateJumpLogWindow() {
 
 		// clear div's children
 		panel.webview.postMessage({ command: "Clear"});
+
+		// set state
+		panel.webview.postMessage({ command: "State", state: "done!"});
+
+		// set build completed image
+		panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('PATH').get("image_b")});
 		
 		var list = error.concat(warning);
 		for(let i=0; i < list.length; i++) {
@@ -131,13 +149,31 @@ function updateJumpLogWindow() {
 	});
 }
 
+function compilingJumpLogWindow() 
+{	
+	isCompiling = true;
+	if(!panel) {
+		_createWebview();
+	}
+	panel.title = "Compiling...";
+
+	// clear div's children
+	panel.webview.postMessage({ command: "Clear"});
+
+	// set state
+	panel.webview.postMessage({ command: "State", state: "compiling..."});
+
+	// set compiling image
+	panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('PATH').get("image_a")});
+}
+
 // create jump log window(webview)
 function _createWebview()
 {
 	panel = vscode.window.createWebviewPanel(
 		'catCoding', // Identifies the type of the webview. Used internally
 		'Cat Coding', // Title of the panel displayed to the user
-		vscode.ViewColumn.Two, // Editor column to show the new webview panel in.
+		vscode.ViewColumn.One, // Editor column to show the new webview panel in.
 		{
 			enableScripts: true
 		} 
@@ -151,7 +187,11 @@ function _createWebview()
     );
 
 	panel.onDidChangeViewState( e => {
-		updateJumpLogWindow();
+		if(isCompiling) {
+			compilingJumpLogWindow();
+		} else {
+			updateJumpLogWindow();
+		}
 	});
 
 	panel.onDidDispose( e => {
@@ -190,7 +230,6 @@ function _moveTo(targetline) {
 }
 
 function getWebviewContent() {
-	const src_image = vscode.workspace.getConfiguration('PATH').get("image");
 	return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -199,7 +238,8 @@ function getWebviewContent() {
 	  <title>Cat Coding</title>
   </head>
   <body>
-	  <img src="${src_image}" width="300" />
+	  <img id="img" src="" width="300" />
+	  <h1 id="state"></h1>
 	  <div id="parent"></div>
 	  
 	  <script type="text/javascript">
@@ -208,11 +248,13 @@ function getWebviewContent() {
 		window.addEventListener('message', event => {
 			const message = event.data;
 			let elm = document.getElementById('parent');
-			if( message.command === "Clear") {
+			switch(message.command) {
+			case "Clear":
 				while( elm.firstChild ){
 					elm.removeChild( elm.firstChild );
 				}
-			} else {
+				break;
+			case "Add":
 				let elm = document.getElementById('parent');
 				let div = document.createElement('div');
 				let a = document.createElement('a');
@@ -227,8 +269,59 @@ function getWebviewContent() {
 				}
 				div.appendChild(a);
 				parent.appendChild(div);
+				break;
+			case "State":
+				let state = document.getElementById('state');
+				state.textContent = message.state;
+				break;
+			case "Image":
+				let img = document.getElementById('img');
+				img.src = message.src;
+				break;
 			}
 		});
+	  </script>
+  </body>
+  </html>`;
+}
+
+function _createCatWebview()
+{
+	let p = vscode.window.createWebviewPanel(
+		'catCoding', // Identifies the type of the webview. Used internally
+		'Cat Coding', // Title of the panel displayed to the user
+		vscode.ViewColumn.One, // Editor column to show the new webview panel in.
+		{
+			enableScripts: true
+		} 
+	);
+	p.webview.html = getWebviewContentCat();
+	
+	return p;
+}
+
+
+function getWebviewContentCat() {
+	return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+	  <meta charset="UTF-8">
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	  <title>Cat Coding</title>
+  </head>
+  <body>
+	  <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+	  <h1 id="lines-of-code-counter">0</h1>
+  
+	  <script>
+	  
+		  const counter = document.getElementById('lines-of-code-counter');
+		  
+		  let count = 0;
+		  counter.textContent = count++;
+		  setInterval(() => {
+			  counter.textContent = count++;
+		  }, 100);
 	  </script>
   </body>
   </html>`;
