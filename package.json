@@ -2,7 +2,7 @@
   "name": "jump-log",
 	"displayName": "Jump Log",
 	"description": "you can jump to the file from build log file.",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"engines": {
 		"vscode": "^1.62.0"
 	},
@@ -11,8 +11,8 @@
 	],
 	"activationEvents": [
         "onCommand:jump-log.helloWorld",
-		"onCommand:jump-log.jumpToFile",
-		"onCommand:jump-log.watchLogFile"
+		"onCommand:jump-log.watchLogFile",
+		"onCommand:jump-log.openJumpLogWindow"
 	],
 	"main": "./src/extension.js",
 	"contributes": {
@@ -22,8 +22,8 @@
 				"title": "Hello World"
 			},
 			{
-				"command": "jump-log.jumpToFile",
-				"title": "Jump To File"
+				"command": "jump-log.openJumpLogWindow",
+				"title": "Open jump log window"
 			},
 			{
 				"command": "jump-log.watchLogFile",
@@ -36,7 +36,7 @@
 				"key": "F5"
 			},
 			{
-				"command": "jump-log.jumpToFile",
+				"command": "jump-log.openJumpLogWindow",
 				"key": "F12"
 			}
 		],
@@ -58,10 +58,15 @@
 					"default": "",
 					"description": "Path to project on Windows(need to double escape...)"
 				},
-				"PATH.batfile":{
+				"PATH.textfile":{
 					"type": "string",
 					"default": "",
-					"description": "Path to .bat file"
+					"description": "Path to text file(**This file will removed after F5 Pressed**)"
+				},
+				"PATH.image":{
+					"type": "string",
+					"default": "",
+					"description": "Path to image src"
 				}
 			}
 		}
