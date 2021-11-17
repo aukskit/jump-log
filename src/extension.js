@@ -90,7 +90,7 @@ async function watchLogFile() {
 function removeTextFile()
 {
 	let path = vscode.workspace.getConfiguration('PATH').get("textfile");
-	if(!path) {
+	if(path) {
 		fs.unlink(path,(error) => {});
 	}
 }
