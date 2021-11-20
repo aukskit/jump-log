@@ -9,26 +9,27 @@ let isCompiling = false;
  */
 function activate(context) {
 
-	// The command has been defined in the package.json file
 	context.subscriptions.push(
-		vscode.commands.registerCommand('jump-log.helloWorld', function () {
-			vscode.window.showInformationMessage('Hello world');
-			_createCatWebview();
+		vscode.commands.registerCommand('jump-log.helloCat', function () {
+			vscode.window.showInformationMessage('Hello Cat');
+			createCatWebview();
 		})
 	);
 
-	// The command has been defined in the package.json file
 	context.subscriptions.push(
 		vscode.commands.registerCommand('jump-log.openJumpLogWindow', function () {
-			updateJumpLogWindow();
+			if(isPathOK()){
+				updateJumpLogWindow();
+			}
 		})
 	);
 
-	// The command has been defined in the package.json file
 	context.subscriptions.push(
 		vscode.commands.registerCommand('jump-log.watchLogFile', async function () {
-			removeTextFile();
-			watchLogFile();
+			if(isPathOK()){
+				removeTextFile();
+				watchLogFile();
+			}
 		})
 	);
 }
@@ -36,19 +37,36 @@ function activate(context) {
 // this method is called when your extension is deactivated
 function deactivate() {}
 
-// Watch the log file until it is updated, and open a jump log window when it is updated.
-async function watchLogFile() {
-	let file = vscode.workspace.getConfiguration('PATH').get("logfile");
-	
-	if(!file) {
-		vscode.window.showErrorMessage("Logfile not found");
-		return;
+// check path settings
+function isPathOK()
+{
+	let logFilePath = vscode.workspace.getConfiguration('jump-log').get("logFile.path");
+	if(!logFilePath) {
+		vscode.window.showErrorMessage("\"logFile.path\" is not yet set");
+		return false;
 	}
+	let projectOnLinuxPath = vscode.workspace.getConfiguration('jump-log').get("projectOnLinux.path");
+	if(!projectOnLinuxPath) {
+		vscode.window.showErrorMessage("\"projectOnLinux.path\" is not yet set");
+		return false;
+	}
+	let projectOnWindowsPath = vscode.workspace.getConfiguration('jump-log').get("projectOnWindows.path");
+	if(!projectOnWindowsPath ) {
+		vscode.window.showErrorMessage("\"projectOnWindows.path\" is not yet set");
+		return false;
+	}
+	return true;
+}
+
+
+// watch the log file until it is updated, and open a jump log window when it is updated.
+async function watchLogFile() {
+	
 	if(isCompiling) {
 		return;
 	}
-	
-	compilingJumpLogWindow();
+
+	_dispCompilingWindow();
 
 	vscode.window.withProgress({
 		location: vscode.ProgressLocation.Notification,
@@ -63,33 +81,39 @@ async function watchLogFile() {
 				cnt++;
 			}, 1000)
 
-			// file watcher
+			// watch for file updates
+			let file = vscode.workspace.getConfiguration('jump-log').get("logFile.path");
 			var watcher = fs.watch(file, async function(event, filename) {
 				if(event == 'change') {
 					watcher.close();
 					resolve();
 					
 					vscode.window.showInformationMessage('Logfile updated.');
-					// Wait for log file to update completely
+					// wait for log file to update completely
 					setTimeout(() => {
 						isCompiling = false;
 						updateJumpLogWindow();
 					}, 1000)
 				}
 			})
+
+			// if the user clicks `Cancel`
 			token.onCancellationRequested(() => {
-				watcher.close();
 				isCompiling = false;
+				watcher.close();
+				if(panel){
+					panel.dispose();
+				}
 			})
 		})
 		return p;
 	})
 }
 
-// Remove text file
+// remove text file
 function removeTextFile()
 {
-	let path = vscode.workspace.getConfiguration('PATH').get("textfile");
+	let path = vscode.workspace.getConfiguration('jump-log').get("textFile.path");
 	if(path) {
 		fs.unlink(path,(error) => {});
 	}
@@ -97,10 +121,10 @@ function removeTextFile()
 
 // update jump log window(Open the window if it's not already open)
 function updateJumpLogWindow() {
-	if(!panel) {
-		_createWebview();
-	}
-	let file = vscode.workspace.getConfiguration('PATH').get("logfile");
+
+	panel =	_createWebview();
+	
+	let file = vscode.workspace.getConfiguration('jump-log').get("logFile.path");
 	vscode.workspace.openTextDocument(file).then((newDoc) => {
 		let text = newDoc.getText();
 		var array = text.split(/\r?\n/g);
@@ -121,15 +145,13 @@ function updateJumpLogWindow() {
 		// set webview title
 		panel.title = "Error:"+error.length + " Warning:"+ warning.length;
 
-		// clear div's children
-		panel.webview.postMessage({ command: "Clear"});
-
 		// set state
 		panel.webview.postMessage({ command: "State", state: "done!"});
 
 		// set build completed image
-		panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('PATH').get("image_b")});
+		panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('jump-log').get("imageB.path")});
 		
+		// parse warning and error and add them to webview
 		var list = error.concat(warning);
 		for(let i=0; i < list.length; i++) {
 			let text = list[i].split(":");
@@ -142,35 +164,16 @@ function updateJumpLogWindow() {
 				let message = "[" + type + " ] " + discription;
 				let windows_path = _get_windows_path(linux_path);
 				
-				// Add warning/error messages 
 				panel.webview.postMessage({ command: "Add", message: message, path: windows_path, line: rows});
 			}
 		}
 	});
 }
 
-function compilingJumpLogWindow() 
-{	
-	isCompiling = true;
-	if(!panel) {
-		_createWebview();
-	}
-	panel.title = "Compiling...";
-
-	// clear div's children
-	panel.webview.postMessage({ command: "Clear"});
-
-	// set state
-	panel.webview.postMessage({ command: "State", state: "compiling..."});
-
-	// set compiling image
-	panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('PATH').get("image_a")});
-}
-
-// create jump log window(webview)
-function _createWebview()
+// create cat webview!
+function createCatWebview()
 {
-	panel = vscode.window.createWebviewPanel(
+	let p = vscode.window.createWebviewPanel(
 		'catCoding', // Identifies the type of the webview. Used internally
 		'Cat Coding', // Title of the panel displayed to the user
 		vscode.ViewColumn.One, // Editor column to show the new webview panel in.
@@ -178,22 +181,55 @@ function _createWebview()
 			enableScripts: true
 		} 
 	);
-	panel.webview.html = getWebviewContent();
+	p.webview.html = _getWebviewContentCat();
+	
+	return p;
+}
 
+// display compiling window
+function _dispCompilingWindow () 
+{
+	// set compiling flag
+	isCompiling = true;
+
+	// create webview
+	panel = _createWebview();
+
+	// set webview title
+	panel.title = "Compiling...";
+
+	// set state
+	panel.webview.postMessage({ command: "State", state: "compiling..."});
+
+	// set compiling image
+	panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('jump-log').get("imageA.path")});
+}
+
+// create jump log window(webview)
+function _createWebview()
+{
+	if(panel) {
+		panel.dispose();
+	}
+	panel = vscode.window.createWebviewPanel(
+		'jumpLog', // Identifies the type of the webview. Used internally
+		'Jump Log', // Title of the panel displayed to the user
+		vscode.ViewColumn.Two, // Editor column to show the new webview panel in.
+		{
+			enableScripts: true,
+			retainContextWhenHidden: true
+		} 
+	);
+	panel.webview.html = _getWebviewContent();
+
+	// receive message from webview 
 	panel.webview.onDidReceiveMessage(
         message => {
 			_jumpTo(message.path, message.line);
         }
     );
 
-	panel.onDidChangeViewState( e => {
-		if(isCompiling) {
-			compilingJumpLogWindow();
-		} else {
-			updateJumpLogWindow();
-		}
-	});
-
+	// set dispose event
 	panel.onDidDispose( e => {
 		panel = null;
 	});
@@ -201,13 +237,21 @@ function _createWebview()
 	return panel;
 }
 
+// convert linux path to window path
 function _get_windows_path(linux_path)
 {
-	let searchValue = vscode.workspace.getConfiguration('PATH').get("projectOnUbuntu");
-	let replaceValue = vscode.workspace.getConfiguration('PATH').get("projectOnWindows");
+	let searchValue = vscode.workspace.getConfiguration('jump-log').get("projectOnLinux.path");
+	if(!searchValue) {
+		vscode.window.showErrorMessage("projectOnLinux.path not found");
+	}
+	let replaceValue = vscode.workspace.getConfiguration('jump-log').get("projectOnWindows.path");
+	if(!replaceValue ) {
+		vscode.window.showErrorMessage("projectOnWindows.path not found");
+	}
 	return linux_path.replace(searchValue, replaceValue).replaceAll("\\", "/");
 }
 
+// jumps to the line in the file.
 function _jumpTo(file_path, line)
 {
 	vscode.workspace.openTextDocument(file_path).then((newDoc) => {
@@ -217,10 +261,11 @@ function _jumpTo(file_path, line)
 	})
 }
 
+// move to the row of active text editor
 function _moveTo(targetline) {
 	let editor = vscode.window.activeTextEditor;
 	let currentline = editor.selection.active.line + 1;
-	if(currentline === targetline) {
+	if(currentline == targetline) {
 		return;
 	}
 	vscode.commands.executeCommand("cursorMove",
@@ -229,7 +274,8 @@ function _moveTo(targetline) {
 	});
 }
 
-function getWebviewContent() {
+// get webview content
+function _getWebviewContent() {
 	return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -248,12 +294,8 @@ function getWebviewContent() {
 		window.addEventListener('message', event => {
 			const message = event.data;
 			let elm = document.getElementById('parent');
+			
 			switch(message.command) {
-			case "Clear":
-				while( elm.firstChild ){
-					elm.removeChild( elm.firstChild );
-				}
-				break;
 			case "Add":
 				let elm = document.getElementById('parent');
 				let div = document.createElement('div');
@@ -285,23 +327,7 @@ function getWebviewContent() {
   </html>`;
 }
 
-function _createCatWebview()
-{
-	let p = vscode.window.createWebviewPanel(
-		'catCoding', // Identifies the type of the webview. Used internally
-		'Cat Coding', // Title of the panel displayed to the user
-		vscode.ViewColumn.One, // Editor column to show the new webview panel in.
-		{
-			enableScripts: true
-		} 
-	);
-	p.webview.html = getWebviewContentCat();
-	
-	return p;
-}
-
-
-function getWebviewContentCat() {
+function _getWebviewContentCat() {
 	return `<!DOCTYPE html>
   <html lang="en">
   <head>

@@ -2,7 +2,7 @@
   "name": "jump-log",
 	"displayName": "Jump Log",
 	"description": "you can jump to the file from build log file.",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"engines": {
 		"vscode": "^1.62.0"
 	},
@@ -10,7 +10,7 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:jump-log.helloWorld",
+        "onCommand:jump-log.helloCat",
 		"onCommand:jump-log.watchLogFile",
 		"onCommand:jump-log.openJumpLogWindow"
 	],
@@ -18,8 +18,8 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "jump-log.helloWorld",
-				"title": "Hello World"
+				"command": "jump-log.helloCat",
+				"title": "Hello Cat"
 			},
 			{
 				"command": "jump-log.openJumpLogWindow",
@@ -41,34 +41,34 @@
 			}
 		],
 		"configuration": {
-			"title": "PATH",
+			"title": "jump-log",
 			"properties": {
-				"PATH.logfile": {
+				"jump-log.logFile.path": {
 					"type": "string",
 					"default": "",
 					"description": "Path to .log file"
 				},
-				"PATH.projectOnUbuntu":{
+				"jump-log.projectOnLinux.path":{
 					"type": "string",
 					"default": "",
 					"description": "Path to project on Ubuntu"
 				},
-				"PATH.projectOnWindows":{
+				"jump-log.projectOnWindows.path":{
 					"type": "string",
 					"default": "",
 					"description": "Path to project on Windows(need to double escape...)"
 				},
-				"PATH.textfile":{
+				"jump-log.textFile.path":{
 					"type": "string",
 					"default": "",
 					"description": "Path to text file(**This file will removed after F5 Pressed**)"
 				},
-				"PATH.image_a":{
+				"jump-log.imageA.path":{
 					"type": "string",
 					"default": "",
 					"description": "Path to image src(Compiling)"
 				},
-				"PATH.image_b":{
+				"jump-log.imageB.path":{
 					"type": "string",
 					"default": "",
 					"description": "Path to image src(Build completed)"
