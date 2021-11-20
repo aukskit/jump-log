@@ -15,8 +15,8 @@ This extension contributes the following settings:
 
 * `jump-log.logFile.path`: set path to build_output.log(c:\\\\Users\\\\xxx\\\\Documents\\\\src\\\\build_output.log)
 * `jump-log.projectOnLinux.path`: set path to project on Linux(/home/user/work_space/<project_name>)
-* `jump-log.projectOnWindows.path`: set path to project on Windows(c:\\\\hared\\\\<project_name>)
-* `jump-log.textFile.path`: set path to text file that triggers the start of the build(c:\\\\shared\\\\a.txt)
+* `jump-log.projectOnWindows.path`: set path to project on Windows(c:\\\\shared\\\\<project_name>)
+* `jump-log.textFile.path`: set path to text file that triggers the start of the build(c:\\\\shared\\\\build_complete.txt)
 * `jump-log.imageA.path`: set path to image src A(https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif)
 * `jump-log.imageB.path`: set path to image src B(https://media0.giphy.com/media/13CoXDiaCcCoyk/giphy.gif)
 
