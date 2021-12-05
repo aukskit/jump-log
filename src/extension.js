@@ -324,6 +324,7 @@ function _getWebviewContent() {
 		tr *:nth-child(2){
 			width: 65%;
 			word-break : break-all;
+			color: white;
 		}
 		tr *:nth-child(3){
 			width: 20%;
@@ -331,12 +332,15 @@ function _getWebviewContent() {
 		}
 		tr *:nth-child(4){
 			width: 5%;
+			color: white;
 		}
 		tr *:nth-child(5){
 			width: 5%;
+			color: white;
 		}
 		th,td {
 			border: solid 1px;
+			color: white;
 		}
 		tr:nth-child(even) {
 			background: #333333;
