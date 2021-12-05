@@ -19,6 +19,7 @@ This extension contributes the following settings:
 * `jump-log.textFile.path`: set path to text file that triggers the start of the build(c:\\\\shared\\build_complete.txt)
 * `jump-log.imageA.path`: set path to image src A(https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif)
 * `jump-log.imageB.path`: set path to image src B(https://media0.giphy.com/media/13CoXDiaCcCoyk/giphy.gif)
+* `jump-log.imageC.path`: set path to image src C(https://giphy.com/embed/NqZn5kPN8VVrW)
 
 ## Known Issues
 None

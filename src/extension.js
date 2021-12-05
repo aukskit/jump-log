@@ -101,9 +101,9 @@ async function watchLogFile() {
 			token.onCancellationRequested(() => {
 				isCompiling = false;
 				watcher.close();
-				if(panel){
-					panel.dispose();
-				}
+				// if(panel){
+				// 	panel.dispose();
+				// }
 			})
 		})
 		return p;
@@ -142,14 +142,19 @@ function updateJumpLogWindow() {
 				return null;
 			}
 		})
+		var has_build_successed = text.match("0 failures.");
+
 		// set webview title
 		panel.title = "Error:"+error.length + " Warning:"+ warning.length;
 
-		// set state
-		panel.webview.postMessage({ command: "State", state: "done!"});
-
-		// set build completed image
-		panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('jump-log').get("imageB.path")});
+		// set state & image
+		if(has_build_successed) {
+			panel.webview.postMessage({ command: "State", state: "Build completed!"});
+			panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('jump-log').get("imageB.path")});
+		} else {
+			panel.webview.postMessage({ command: "State", state: "Build failed..."});
+			panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('jump-log').get("imageC.path")});
+		}
 		
 		// parse warning and error and add them to webview
 		var list = error.concat(warning);
@@ -161,10 +166,21 @@ function updateJumpLogWindow() {
 				let cols = text[2];
 				let type = text[3];
 				let discription = text[4];
-				let message = "[" + type + " ] " + discription;
+				let filename = _get_filename(linux_path);
 				let windows_path = _get_windows_path(linux_path);
 				
-				panel.webview.postMessage({ command: "Add", message: message, path: windows_path, line: rows});
+				// panel.webview.postMessage({ command: "Add", message: message, path: windows_path, line: rows});
+				panel.webview.postMessage(
+					{
+						command: "Add",
+						type: type,
+						discription: discription,
+						file: filename,
+						path: windows_path,
+						rows: rows,
+						cols: cols,
+					}
+				);
 			}
 		}
 	});
@@ -214,7 +230,10 @@ function _createWebview()
 	panel = vscode.window.createWebviewPanel(
 		'jumpLog', // Identifies the type of the webview. Used internally
 		'Jump Log', // Title of the panel displayed to the user
-		vscode.ViewColumn.Two, // Editor column to show the new webview panel in.
+		{
+			viewColumn: vscode.ViewColumn.Two,
+			preserveFocus: true,
+		},
 		{
 			enableScripts: true,
 			retainContextWhenHidden: true
@@ -251,6 +270,13 @@ function _get_windows_path(linux_path)
 	return linux_path.replace(searchValue, replaceValue).replaceAll("\\", "/");
 }
 
+// get filename from path
+function _get_filename(path)
+{
+	let array = path.split("/");
+	return array.slice(-1)[0];
+}
+
 // jumps to the line in the file.
 function _jumpTo(file_path, line)
 {
@@ -277,54 +303,122 @@ function _moveTo(targetline) {
 // get webview content
 function _getWebviewContent() {
 	return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <title>Cat Coding</title>
-  </head>
-  <body>
-	  <img id="img" src="" width="300" />
-	  <h1 id="state"></h1>
-	  <div id="parent"></div>
-	  
-	  <script type="text/javascript">
-	  	const vscode = acquireVsCodeApi();
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Cat Coding</title>
+	<style>
+		table{
+			width: 100%;
+			border-collapse: collapse;
+		}
+		th{
+			width: 30%;
+			background: #1E1E1E;
+			color: white;
+		}
+		tr *:nth-child(1){
+			width: 5%;
+		}
+		tr *:nth-child(2){
+			width: 65%;
+			word-break : break-all;
+		}
+		tr *:nth-child(3){
+			width: 20%;
+			word-break : break-all;
+		}
+		tr *:nth-child(4){
+			width: 5%;
+		}
+		tr *:nth-child(5){
+			width: 5%;
+		}
+		th,td {
+			border: solid 1px;
+		}
+		tr:nth-child(even) {
+			background: #333333;
+		}
+		tr:nth-child(odd) {
+			background: #37373D;
+		}
+	</style>
+</head>
+<img id="img" src="" width="300" />
+<h1 id="state"></h1>
+<table id="data-table">
+	<thead>
+		<tr>
+			<th>Type</th>
+			<th>Discription</th>
+			<th>File</th>
+			<th>Row</th>
+			<th>Col</th>
+		</tr>
+	</thead>
+</table>
+<br>
 
-		window.addEventListener('message', event => {
-			const message = event.data;
-			let elm = document.getElementById('parent');
-			
-			switch(message.command) {
-			case "Add":
-				let elm = document.getElementById('parent');
-				let div = document.createElement('div');
-				let a = document.createElement('a');
-				a.id = "a"+elm.childElementCount;
-				a.innerHTML = message.message + "..." + message.path + " : "+ message.line;
-				a.href = "";
-				a.onclick = () => {
-					vscode.postMessage({
-						path: message.path,
-						line: message.line
-					})
-				}
-				div.appendChild(a);
-				parent.appendChild(div);
-				break;
-			case "State":
-				let state = document.getElementById('state');
-				state.textContent = message.state;
-				break;
-			case "Image":
-				let img = document.getElementById('img');
-				img.src = message.src;
-				break;
-			}
-		});
-	  </script>
-  </body>
-  </html>`;
+<script type="text/javascript">
+const vscode = acquireVsCodeApi();
+let table = document.getElementById('data-table');
+table.style.display ="none"
+
+window.addEventListener('message', event => {
+	const message = event.data;
+	let elm = document.getElementById('parent');
+	
+	switch(message.command) {
+	case "Add":
+		table.style.display ="block"
+		let newRow = table.insertRow();
+
+		let cell_1 = newRow.insertCell();
+		let text_1 = document.createElement('font');
+		text_1.innerText = message.type;
+		if(message.type == " error") {
+			text_1.style.color = "red";
+		} else if(message.type == " warning") {
+			text_1.style.color = "yellow";
+		}
+		cell_1.appendChild(text_1);
+
+		let cell_2 = newRow.insertCell();
+		cell_2.appendChild(document.createTextNode(message.discription));
+
+		let cell_3 = newRow.insertCell();
+		let a = document.createElement('a');
+		a.innerHTML = message.file;
+		a.href = "";
+		a.onclick = () => {
+			vscode.postMessage({
+				path: message.path,
+				line: message.rows
+			})
+		}
+		cell_3.appendChild(a);
+
+		let cell_4 = newRow.insertCell();
+		cell_4.appendChild(document.createTextNode(message.rows));
+
+		let cell_5 = newRow.insertCell();
+		cell_5.appendChild(document.createTextNode(message.cols));
+		break;
+	case "State":
+		let state = document.getElementById('state');
+		state.textContent = message.state;
+		break;
+	case "Image":
+		let img = document.getElementById('img');
+		img.src = message.src;
+		break;
+	}
+});
+</script>
+</body>
+</html>`;
 }
 
 function _getWebviewContentCat() {

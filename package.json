@@ -2,7 +2,7 @@
   "name": "jump-log",
 	"displayName": "Jump Log",
 	"description": "you can jump to the file from build log file.",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"engines": {
 		"vscode": "^1.62.0"
 	},
@@ -72,6 +72,11 @@
 					"type": "string",
 					"default": "",
 					"description": "Path to image src(Build completed)"
+				},
+				"jump-log.imageC.path":{
+					"type": "string",
+					"default": "",
+					"description": "Path to image src(Build failed)"
 				}
 			}
 		}
