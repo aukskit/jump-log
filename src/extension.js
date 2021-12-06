@@ -142,18 +142,18 @@ function updateJumpLogWindow() {
 				return null;
 			}
 		})
-		var has_build_successed = text.match("Error");
+		var has_build_failed = text.match("Error");
 
 		// set webview title
 		panel.title = "Error:"+error.length + " Warning:"+ warning.length;
 
 		// set state & image
-		if(has_build_successed) {
+		if(has_build_failed) {
+			panel.webview.postMessage({ command: "State", state: "Build failed..."});
+			panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('jump-log').get("imageC.path")});	
+		} else {
 			panel.webview.postMessage({ command: "State", state: "Build completed!"});
 			panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('jump-log').get("imageB.path")});
-		} else {
-			panel.webview.postMessage({ command: "State", state: "Build failed..."});
-			panel.webview.postMessage({ command: "Image", src: vscode.workspace.getConfiguration('jump-log').get("imageC.path")});
 		}
 		
 		// parse warning and error and add them to webview
