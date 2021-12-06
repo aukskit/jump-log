@@ -142,7 +142,7 @@ function updateJumpLogWindow() {
 				return null;
 			}
 		})
-		var has_build_successed = text.match("0 failures.");
+		var has_build_successed = text.match("Error");
 
 		// set webview title
 		panel.title = "Error:"+error.length + " Warning:"+ warning.length;
