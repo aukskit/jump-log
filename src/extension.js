@@ -166,7 +166,6 @@ function updateJumpLogWindow() {
 				let cols = text[2];
 				let type = text[3];
 				let discription = text.slice(4).join(":");
-				
 				let filename = _get_filename(linux_path);
 				let windows_path = _get_windows_path(linux_path);
 				
